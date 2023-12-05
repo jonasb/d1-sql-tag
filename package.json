@@ -2,7 +2,21 @@
   "name": "d1-sql-tag",
   "version": "0.1.1",
   "description": "A template literal for working with Cloudflare D1 database",
+  "keywords": [
+    "d1",
+    "cloudflare",
+    "sqlite"
+  ],
+  "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonasb/d1-sql-tag.git"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --sourcemap --dts",
     "prettier:check": "prettier --check .",
@@ -10,8 +24,6 @@
     "release": "npm run build && npm run test && changeset publish",
     "test": "node --import tsx --test test/sql-tag.test.ts"
   },
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
     "@cloudflare/workers-types": "^4.20231121.0",
