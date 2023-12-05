@@ -63,7 +63,12 @@ export interface SqlResult<T extends object = Record<string, Primitive>>
 
 interface SqlTagOptions {
   beforeQuery?: (id: number, queries: string[]) => void;
-  afterQuery?: (id: number, queries: string[], results: SqlResult[]) => void;
+  afterQuery?: (
+    id: number,
+    queries: string[],
+    results: SqlResult[],
+    duration: number,
+  ) => void;
 }
 
 let batchId = 0;
@@ -94,10 +99,12 @@ export function createD1SqlTag(
 
     const id = makeBatchId();
     options?.beforeQuery?.(id, queries);
+    const start = Date.now();
     const result = (await db.batch(
       statements.map((it) => makeNativeStatement(db, it)),
     )) as any;
-    options?.afterQuery?.(id, queries, result);
+    const duration = Date.now() - start;
+    options?.afterQuery?.(id, queries, result, duration);
 
     for (let i = 0; i < result.length; i++) {
       const statement = statements[i];
@@ -195,13 +202,20 @@ async function executeAll<TRaw extends object, TMapped extends object>(
 ) {
   const batchId = makeBatchId();
   options?.beforeQuery?.(batchId, [statement.query]);
+  const start = Date.now();
 
   const result = (await makeNativeStatement(
     db,
     statement as any,
   ).all()) as SqlResult<TMapped>;
 
-  options?.afterQuery?.(batchId, [statement.query], [result as SqlResult]);
+  const duration = Date.now() - start;
+  options?.afterQuery?.(
+    batchId,
+    [statement.query],
+    [result as SqlResult],
+    duration,
+  );
 
   if (mapper) {
     result.results = result.results.map(mapper as any);
@@ -217,8 +231,15 @@ async function executeRun<T extends object, U extends object>(
 ) {
   const batchId = makeBatchId();
   options?.beforeQuery?.(batchId, [statement.query]);
+  const start = Date.now();
   const result = await makeNativeStatement(db, statement).run();
-  options?.afterQuery?.(batchId, [statement.query], [result as SqlResult]);
+  const duration = Date.now() - start;
+  options?.afterQuery?.(
+    batchId,
+    [statement.query],
+    [result as SqlResult],
+    duration,
+  );
   return result;
 }
 
