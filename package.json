@@ -19,6 +19,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --sourcemap --dts",
+    "changeset": "changeset",
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
     "release": "npm run build && npm run test && changeset publish",
