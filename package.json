@@ -7,6 +7,7 @@
     "build": "tsup src/index.ts --format esm --sourcemap --dts",
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
+    "release": "npm run build && npm run test && changeset publish",
     "test": "node --import tsx --test test/sql-tag.test.ts"
   },
   "author": "",
