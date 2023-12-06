@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.2.1
+
+### Patch Changes
+
+- a641eba: Updated documentation
+
 ## 0.2.0
 
 ### Minor Changes
