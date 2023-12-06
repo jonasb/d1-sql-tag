@@ -1,14 +1,8 @@
 import type { SqlResult } from "./sql-tag.js";
 
-export function logQueryResults(
-  queries: string[],
-  results: SqlResult[],
-  duration?: number,
-) {
+export function logQueryResults(queries: string[], results: SqlResult[], duration?: number) {
   console.log(
-    `D1 batch: ${typeof duration === "number" ? `${duration}ms · ` : ""}${
-      queries.length
-    } queries`,
+    `D1 batch: ${typeof duration === "number" ? `${duration}ms · ` : ""}${queries.length} queries`,
   );
   for (let i = 0; i < queries.length; i++) {
     const query = queries[i];
@@ -20,10 +14,7 @@ export function logQueryResults(
       "rows_read" in result.meta
         ? ` · ${result.meta.rows_read} read · ${result.meta.rows_written} written`
         : "";
-    console.log(
-      `   ↳ ${result.meta.duration}ms · ${result.meta.changes} changed` +
-        logSuffix,
-    );
+    console.log(`   ↳ ${result.meta.duration}ms · ${result.meta.changes} changed` + logSuffix);
   }
 }
 

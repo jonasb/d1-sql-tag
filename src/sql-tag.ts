@@ -14,9 +14,7 @@ export type SqlTag = ((
 };
 
 export interface SqlQueryFragment {
-  build<
-    T extends object = Record<string, Primitive>,
-  >(): RawPreparedStatement<T>;
+  build<T extends object = Record<string, Primitive>>(): RawPreparedStatement<T>;
   all<T extends object = Record<string, Primitive>>(): Promise<D1Result<T>>;
   run(): Promise<D1Result>;
   templateStrings: TemplateStringsArray;
@@ -36,48 +34,33 @@ interface MappedPreparedStatement<TRaw extends object, TMapped extends object>
   mapper: (row: TRaw) => TMapped;
 }
 
-interface RawPreparedStatement<T extends object>
-  extends PreparedStatementBase<T> {
-  map<TMapped extends object>(
-    mapper: (row: T) => TMapped,
-  ): MappedPreparedStatement<T, TMapped>;
+interface RawPreparedStatement<T extends object> extends PreparedStatementBase<T> {
+  map<TMapped extends object>(mapper: (row: T) => TMapped): MappedPreparedStatement<T, TMapped>;
 }
 
-type PreparedStatement<
-  T extends object,
-  U extends object = Record<string, Primitive>,
-> = RawPreparedStatement<T> | MappedPreparedStatement<U, T>;
+type PreparedStatement<T extends object, U extends object = Record<string, Primitive>> =
+  | RawPreparedStatement<T>
+  | MappedPreparedStatement<U, T>;
 
 export type RowType<
-  T extends
-    | PreparedStatementBase<any>
-    | ((...args: any) => PreparedStatementBase<any>),
+  T extends PreparedStatementBase<any> | ((...args: any) => PreparedStatementBase<any>),
 > = T extends PreparedStatementBase<any>
   ? T[typeof rowTypeSymbol]
   : T extends (...args: any) => PreparedStatementBase<any>
     ? ReturnType<T>[typeof rowTypeSymbol]
     : never;
 
-export interface SqlResult<T extends object = Record<string, Primitive>>
-  extends D1Result<T> {}
+export interface SqlResult<T extends object = Record<string, Primitive>> extends D1Result<T> {}
 
 interface SqlTagOptions {
   beforeQuery?: (id: number, queries: string[]) => void;
-  afterQuery?: (
-    id: number,
-    queries: string[],
-    results: SqlResult[],
-    duration: number,
-  ) => void;
+  afterQuery?: (id: number, queries: string[], results: SqlResult[], duration: number) => void;
 }
 
 let batchId = 0;
 const rowTypeSymbol = Symbol("rowType");
 
-export function createD1SqlTag(
-  db: D1Database,
-  options?: SqlTagOptions,
-): SqlTag {
+export function createD1SqlTag(db: D1Database, options?: SqlTagOptions): SqlTag {
   const sqlTag: SqlTag = (strings, ...values): SqlQueryFragment => {
     const fragment: SqlQueryFragment = {
       build() {
@@ -100,9 +83,7 @@ export function createD1SqlTag(
     const id = makeBatchId();
     options?.beforeQuery?.(id, queries);
     const start = Date.now();
-    const result = (await db.batch(
-      statements.map((it) => makeNativeStatement(db, it)),
-    )) as any;
+    const result = (await db.batch(statements.map((it) => makeNativeStatement(db, it)))) as any;
     const duration = Date.now() - start;
     options?.afterQuery?.(id, queries, result, duration);
 
@@ -195,27 +176,17 @@ function expandTemplate(
 async function executeAll<TRaw extends object, TMapped extends object>(
   db: D1Database,
   options: SqlTagOptions | undefined,
-  statement:
-    | RawPreparedStatement<TRaw>
-    | MappedPreparedStatement<TRaw, TMapped>,
+  statement: RawPreparedStatement<TRaw> | MappedPreparedStatement<TRaw, TMapped>,
   mapper: ((row: TRaw) => TMapped) | null,
 ) {
   const batchId = makeBatchId();
   options?.beforeQuery?.(batchId, [statement.query]);
   const start = Date.now();
 
-  const result = (await makeNativeStatement(
-    db,
-    statement as any,
-  ).all()) as SqlResult<TMapped>;
+  const result = (await makeNativeStatement(db, statement as any).all()) as SqlResult<TMapped>;
 
   const duration = Date.now() - start;
-  options?.afterQuery?.(
-    batchId,
-    [statement.query],
-    [result as SqlResult],
-    duration,
-  );
+  options?.afterQuery?.(batchId, [statement.query], [result as SqlResult], duration);
 
   if (mapper) {
     result.results = result.results.map(mapper as any);
@@ -234,12 +205,7 @@ async function executeRun<T extends object, U extends object>(
   const start = Date.now();
   const result = await makeNativeStatement(db, statement).run();
   const duration = Date.now() - start;
-  options?.afterQuery?.(
-    batchId,
-    [statement.query],
-    [result as SqlResult],
-    duration,
-  );
+  options?.afterQuery?.(batchId, [statement.query], [result as SqlResult], duration);
   return result;
 }
 

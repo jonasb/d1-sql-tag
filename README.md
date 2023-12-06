@@ -34,11 +34,7 @@ function createSqlTag(db: D1Database) {
 }
 
 export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const sql = createSqlTag(env.DB);
     const result = await sql`SELECT ${"hello world"} AS message`.all<{
       message: string;

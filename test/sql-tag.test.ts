@@ -1,11 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import assert from "node:assert";
 import { describe, it } from "node:test";
-import {
-  createD1SqlTag,
-  type Primitive,
-  type SqlQueryFragment,
-} from "../src/sql-tag.js";
+import { createD1SqlTag, type Primitive, type SqlQueryFragment } from "../src/sql-tag.js";
 
 function mockTag() {
   return createD1SqlTag({ dummy: true } as unknown as D1Database);
@@ -17,8 +13,7 @@ function expectQueryEquals(
   expectedValues: Primitive[],
 ) {
   const { query, values } = fragment.build();
-  assert.equal(query, expectedQuery);
-  assert.deepEqual(values, expectedValues);
+  assert.deepEqual({ query, values }, { query: expectedQuery, values: expectedValues });
 }
 
 describe("sql", () => {
