@@ -17,6 +17,9 @@
     "type": "git",
     "url": "git+https://github.com/jonasb/d1-sql-tag.git"
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --sourcemap --dts",
     "changeset": "changeset",

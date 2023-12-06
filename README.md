@@ -1,5 +1,7 @@
 # `d1-sql-tag`
 
+[![npm version](https://badge.fury.io/js/d1-sql-tag.svg)](https://badge.fury.io/js/d1-sql-tag)
+
 A template literal for working with [Cloudflare D1](https://developers.cloudflare.com/d1/)
 database.
 
