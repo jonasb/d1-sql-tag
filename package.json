@@ -23,7 +23,8 @@
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
     "release": "npm run build && npm run test && changeset publish",
-    "test": "node --import tsx --test test/sql-tag.test.ts"
+    "test": "node --import tsx --test test/sql-tag.test.ts",
+    "test:watch": "node --import tsx --watch --test test/sql-tag.test.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",

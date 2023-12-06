@@ -26,6 +26,15 @@ describe("sql", () => {
     );
   });
 
+  it("duplicated values", () => {
+    const sql = mockTag();
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE foo = ${"hello"} OR bar = ${"hello"}`,
+      "SELECT * FROM users WHERE foo = ?1 OR bar = ?1",
+      ["hello"],
+    );
+  });
+
   it("fragment", () => {
     const sql = mockTag();
     expectQueryEquals(
@@ -40,6 +49,16 @@ describe("sql", () => {
     expectQueryEquals(
       sql`SELECT * FROM users WHERE ${sql`column = ${123}`}`,
       "SELECT * FROM users WHERE column = ?1",
+      [123],
+    );
+  });
+
+  it("fragment with values used twice", () => {
+    const sql = mockTag();
+    const fragment = sql`= ${123}`;
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE foo ${fragment} OR bar ${fragment}`,
+      "SELECT * FROM users WHERE foo = ?1 OR bar = ?1",
       [123],
     );
   });

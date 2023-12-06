@@ -157,10 +157,14 @@ function expandTemplate(
           typeof value === "object" &&
           "templateStrings" in value &&
           "templateValues" in value;
+
         if (valueIsFragment) {
           expand(value.templateStrings, value.templateValues);
         } else {
-          const valueIndex = values.push(value as Primitive) - 1;
+          let valueIndex = values.indexOf(value);
+          if (valueIndex === -1) {
+            valueIndex = values.push(value) - 1;
+          }
           query += `?${valueIndex + 1}`;
         }
       }
