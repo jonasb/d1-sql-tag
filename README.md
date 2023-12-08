@@ -7,6 +7,8 @@ database.
 
 `npm install d1-sql-tag`
 
+- [Changelog](./CHANGELOG.md)
+
 ## Usage with Cloudflare Workers
 
 If you have created a D1 database and configured it with the binding name `DB`,
