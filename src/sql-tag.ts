@@ -1,4 +1,4 @@
-import type { D1Database, D1Result } from "@cloudflare/workers-types";
+import type { D1Database, D1Response, D1Result } from "@cloudflare/workers-types";
 
 export type Primitive = string | number | boolean | null;
 
@@ -16,7 +16,7 @@ export type SqlTag = ((
 export interface SqlQueryFragment {
   build<T extends object = Record<string, Primitive>>(): RawPreparedStatement<T>;
   all<T extends object = Record<string, Primitive>>(): Promise<D1Result<T>>;
-  run(): Promise<D1Result>;
+  run(): Promise<D1Response>;
   templateStrings: TemplateStringsArray;
   templateValues: (Primitive | SqlQueryFragment)[];
 }
@@ -25,7 +25,7 @@ interface PreparedStatementBase<T extends object> {
   query: string;
   values: Primitive[];
   all(): Promise<D1Result<T>>;
-  run(): Promise<D1Result>;
+  run(): Promise<D1Response>;
   [rowTypeSymbol]: T;
 }
 
@@ -44,11 +44,12 @@ type PreparedStatement<T extends object, U extends object = Record<string, Primi
 
 export type RowType<
   T extends PreparedStatementBase<any> | ((...args: any) => PreparedStatementBase<any>),
-> = T extends PreparedStatementBase<any>
-  ? T[typeof rowTypeSymbol]
-  : T extends (...args: any) => PreparedStatementBase<any>
-    ? ReturnType<T>[typeof rowTypeSymbol]
-    : never;
+> =
+  T extends PreparedStatementBase<any>
+    ? T[typeof rowTypeSymbol]
+    : T extends (...args: any) => PreparedStatementBase<any>
+      ? ReturnType<T>[typeof rowTypeSymbol]
+      : never;
 
 export interface SqlResult<T extends object = Record<string, Primitive>> extends D1Result<T> {}
 
