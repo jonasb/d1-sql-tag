@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.3.0
+
+### Minor Changes
+
+- a43ea58: Change return type of run() from D1Result to D1Response
+
 ## 0.2.2
 
 ### Patch Changes
