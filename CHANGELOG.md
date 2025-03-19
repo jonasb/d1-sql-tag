@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.3.1
+
+### Patch Changes
+
+- c7216d8: Upgrade dependencies
+
 ## 0.3.0
 
 ### Minor Changes
