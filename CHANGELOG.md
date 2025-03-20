@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.4.1
+
+### Patch Changes
+
+- f2b3c36: Use @cloudflare/workers-types/experimental/index.js
+
 ## 0.4.0
 
 ### Minor Changes
