@@ -1,8 +1,37 @@
-import type {
-  D1Database,
-  D1Response,
-  D1Result,
-} from "@cloudflare/workers-types/experimental/index.js";
+import type { D1Database } from "@cloudflare/workers-types/experimental/index.js";
+
+// Copied from @cloudflare/workers-types
+interface D1Meta {
+  duration: number;
+  size_after: number;
+  rows_read: number;
+  rows_written: number;
+  last_row_id: number;
+  changed_db: boolean;
+  changes: number;
+  /**
+   * The region of the database instance that executed the query.
+   */
+  served_by_region?: string;
+  /**
+   * True if-and-only-if the database instance that executed the query was the primary.
+   */
+  served_by_primary?: boolean;
+  timings?: {
+    /**
+     * The duration of the SQL query execution by the database instance. It doesn't include any network time.
+     */
+    sql_duration_ms: number;
+  };
+}
+interface D1Response {
+  success: true;
+  meta: D1Meta & Record<string, unknown>;
+  error?: never;
+}
+type D1Result<T = unknown> = D1Response & {
+  results: T[];
+};
 
 export type Primitive = string | number | boolean | null;
 
