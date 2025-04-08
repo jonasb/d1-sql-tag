@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.4.3
+
+### Patch Changes
+
+- edf0d22: Copy paste result types from @cloudflare/worker-types
+
 ## 0.4.2
 
 ### Patch Changes
