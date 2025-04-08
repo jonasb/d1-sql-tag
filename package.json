@@ -31,11 +31,11 @@
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",
-    "@cloudflare/workers-types": "^4.20250319.0",
-    "@types/node": "^22.0.0",
+    "@cloudflare/workers-types": "^4.20250408.0",
+    "@types/node": "^22.14.0",
     "prettier": "^3.1.0",
     "tsup": "^8.0.1",
     "tsx": "^4.6.2",
-    "typescript": "^5.3.2"
+    "typescript": "^5.8.3"
   }
 }
