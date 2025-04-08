@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.4.2
+
+### Patch Changes
+
+- 32c4c0c: Upgrade dependencies
+
 ## 0.4.1
 
 ### Patch Changes
