@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.4.4
+
+### Patch Changes
+
+- 9760568: Add @cloudflare/workers-types as dependency
+
 ## 0.4.3
 
 ### Patch Changes
