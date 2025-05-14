@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.5.0
+
+### Minor Changes
+
+- b6742ec: Support D1DatabaseSession in addition to D1Database when creating tag
+
 ## 0.4.4
 
 ### Patch Changes
