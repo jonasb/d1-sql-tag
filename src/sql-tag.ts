@@ -2,6 +2,7 @@ import type {
   D1Database,
   D1Response,
   D1Result,
+  D1DatabaseSession,
 } from "@cloudflare/workers-types/experimental/index.js";
 
 export type Primitive = string | number | boolean | null;
@@ -65,7 +66,10 @@ interface SqlTagOptions {
 let batchId = 0;
 const rowTypeSymbol = Symbol("rowType");
 
-export function createD1SqlTag(db: D1Database, options?: SqlTagOptions): SqlTag {
+export function createD1SqlTag(
+  db: D1Database | D1DatabaseSession,
+  options?: SqlTagOptions,
+): SqlTag {
   const sqlTag: SqlTag = (strings, ...values): SqlQueryFragment => {
     const fragment: SqlQueryFragment = {
       build() {
@@ -106,7 +110,7 @@ export function createD1SqlTag(db: D1Database, options?: SqlTagOptions): SqlTag 
 }
 
 function buildPreparedStatement<T extends object>(
-  db: D1Database,
+  db: D1Database | D1DatabaseSession,
   options: SqlTagOptions | undefined,
   templateStrings: TemplateStringsArray,
   templateValues: (Primitive | SqlQueryFragment)[],
@@ -183,7 +187,7 @@ function expandTemplate(
 }
 
 async function executeAll<TRaw extends object, TMapped extends object>(
-  db: D1Database,
+  db: D1Database | D1DatabaseSession,
   options: SqlTagOptions | undefined,
   statement: RawPreparedStatement<TRaw> | MappedPreparedStatement<TRaw, TMapped>,
   mapper: ((row: TRaw) => TMapped) | null,
@@ -205,7 +209,7 @@ async function executeAll<TRaw extends object, TMapped extends object>(
 }
 
 async function executeRun<T extends object, U extends object>(
-  db: D1Database,
+  db: D1Database | D1DatabaseSession,
   options: SqlTagOptions | undefined,
   statement: PreparedStatement<T, U>,
 ) {
@@ -219,7 +223,7 @@ async function executeRun<T extends object, U extends object>(
 }
 
 function makeNativeStatement<T extends object>(
-  db: D1Database,
+  db: D1Database | D1DatabaseSession,
   statement: PreparedStatementBase<T>,
 ) {
   let stmt = db.prepare(statement.query);
