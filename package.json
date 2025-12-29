@@ -21,7 +21,7 @@
     "provenance": true
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --sourcemap --dts",
+    "build": "tsdown src/index.ts --format esm --sourcemap --dts",
     "changeset": "changeset",
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
@@ -37,7 +37,7 @@
     "@cloudflare/vitest-pool-workers": "^0.10.14",
     "@types/node": "^25.0.3",
     "prettier": "^3.5.3",
-    "tsup": "^8.4.0",
+    "tsdown": "^0.18.3",
     "typescript": "^5.8.3",
     "vitest": "~3.2.0",
     "wrangler": "^4.53.0"
