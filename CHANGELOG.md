@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.6.1
+
+### Patch Changes
+
+- cac48cc: Fix package exports to use correct file extensions (.mjs, .d.mts) from tsdown build output
+
 ## 0.6.0
 
 ### Minor Changes
