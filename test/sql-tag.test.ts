@@ -1,6 +1,5 @@
 import type { D1Database, D1Response, D1Result } from "@cloudflare/workers-types";
-import assert from "node:assert";
-import { describe, it, mock } from "node:test";
+import { describe, expect, it, vi } from "vitest";
 import {
   createD1SqlTag,
   createMockSqlTag,
@@ -19,7 +18,7 @@ function expectQueryEquals(
   expectedValues: Primitive[],
 ) {
   const { query, values } = fragment.build();
-  assert.deepEqual({ query, values }, { query: expectedQuery, values: expectedValues });
+  expect({ query, values }).toEqual({ query: expectedQuery, values: expectedValues });
 }
 
 describe("sql", () => {
@@ -97,9 +96,9 @@ describe("createMockSqlTag", () => {
 
   function createMockHandler(impl?: Partial<MockSqlTagHandler>) {
     return {
-      all: mock.fn(impl?.all ?? (async () => defaultResult as D1Result<any>)),
-      run: mock.fn(impl?.run ?? (async () => defaultResult as D1Response)),
-      batch: mock.fn(
+      all: vi.fn(impl?.all ?? (async () => defaultResult as D1Result<any>)),
+      run: vi.fn(impl?.run ?? (async () => defaultResult as D1Response)),
+      batch: vi.fn(
         impl?.batch ?? (async (stmts: any[]) => stmts.map(() => defaultResult)),
       ),
     };
@@ -110,11 +109,8 @@ describe("createMockSqlTag", () => {
 
     await sql`SELECT * FROM users WHERE id = ${1}`.all();
 
-    assert.equal(sql.handler.all.mock.callCount(), 1);
-    assert.deepEqual(sql.handler.all.mock.calls[0].arguments, [
-      "SELECT * FROM users WHERE id = ?1",
-      [1],
-    ]);
+    expect(sql.handler.all).toHaveBeenCalledTimes(1);
+    expect(sql.handler.all).toHaveBeenCalledWith("SELECT * FROM users WHERE id = ?1", [1]);
   });
 
   it("builds query correctly and calls handler.run", async () => {
@@ -122,10 +118,9 @@ describe("createMockSqlTag", () => {
 
     await sql`INSERT INTO users (name) VALUES (${"Alice"})`.run();
 
-    assert.equal(sql.handler.run.mock.callCount(), 1);
-    assert.deepEqual(sql.handler.run.mock.calls[0].arguments, [
-      "INSERT INTO users (name) VALUES (?1)",
-      ["Alice"],
+    expect(sql.handler.run).toHaveBeenCalledTimes(1);
+    expect(sql.handler.run).toHaveBeenCalledWith("INSERT INTO users (name) VALUES (?1)", [
+      "Alice",
     ]);
   });
 
@@ -135,10 +130,7 @@ describe("createMockSqlTag", () => {
     const whereClause = sql`id = ${42}`;
     await sql`SELECT * FROM users WHERE ${whereClause}`.all();
 
-    assert.deepEqual(sql.handler.all.mock.calls[0].arguments, [
-      "SELECT * FROM users WHERE id = ?1",
-      [42],
-    ]);
+    expect(sql.handler.all).toHaveBeenCalledWith("SELECT * FROM users WHERE id = ?1", [42]);
   });
 
   it("supports .build() to get query without executing", () => {
@@ -146,10 +138,10 @@ describe("createMockSqlTag", () => {
 
     const statement = sql`SELECT * FROM users WHERE id = ${1}`.build();
 
-    assert.equal(statement.query, "SELECT * FROM users WHERE id = ?1");
-    assert.deepEqual(statement.values, [1]);
-    assert.equal(sql.handler.all.mock.callCount(), 0);
-    assert.equal(sql.handler.run.mock.callCount(), 0);
+    expect(statement.query).toBe("SELECT * FROM users WHERE id = ?1");
+    expect(statement.values).toEqual([1]);
+    expect(sql.handler.all).not.toHaveBeenCalled();
+    expect(sql.handler.run).not.toHaveBeenCalled();
   });
 
   it("supports .map() for result transformation", async () => {
@@ -168,7 +160,7 @@ describe("createMockSqlTag", () => {
       .map((row) => ({ ...row, name: row.name.toUpperCase() }))
       .all();
 
-    assert.deepEqual(result.results, [{ id: 1, name: "ALICE" }]);
+    expect(result.results).toEqual([{ id: 1, name: "ALICE" }]);
   });
 
   it("supports batch execution", async () => {
@@ -179,8 +171,8 @@ describe("createMockSqlTag", () => {
       sql`INSERT INTO users (name) VALUES (${"Bob"})`.build(),
     ]);
 
-    assert.equal(sql.handler.batch.mock.callCount(), 1);
-    assert.deepEqual(sql.handler.batch.mock.calls[0].arguments[0], [
+    expect(sql.handler.batch).toHaveBeenCalledTimes(1);
+    expect(sql.handler.batch).toHaveBeenCalledWith([
       { query: "INSERT INTO users (name) VALUES (?1)", values: ["Alice"] },
       { query: "INSERT INTO users (name) VALUES (?1)", values: ["Bob"] },
     ]);
@@ -205,7 +197,7 @@ describe("createMockSqlTag", () => {
         .map((row) => ({ ...row, name: row.name.toUpperCase() })),
     ]);
 
-    assert.deepEqual(result1.results, [{ id: 1, name: "ALICE" }]);
-    assert.deepEqual(result2.results, [{ id: 2, name: "BOB" }]);
+    expect(result1.results).toEqual([{ id: 1, name: "ALICE" }]);
+    expect(result2.results).toEqual([{ id: 2, name: "BOB" }]);
   });
 });

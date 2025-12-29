@@ -26,18 +26,20 @@
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
     "release": "npm run build && npm run test && changeset publish",
-    "test": "node --import tsx --test test/sql-tag.test.ts",
-    "test:watch": "node --import tsx --watch --test test/sql-tag.test.ts"
+    "test": "vitest --run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20250514.0"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.4",
+    "@cloudflare/vitest-pool-workers": "^0.10.14",
     "@types/node": "^25.0.3",
     "prettier": "^3.5.3",
     "tsup": "^8.4.0",
-    "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "~3.2.0",
+    "wrangler": "^4.53.0"
   }
 }

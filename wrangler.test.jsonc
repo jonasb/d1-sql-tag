@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "d1-sql-tag-test",
+  "main": "src/test-worker.ts",
+  "compatibility_date": "2025-10-08",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "test-db",
+      "database_id": "local"
+    }
+  ]
+}
