@@ -6,14 +6,16 @@ describe("D1 Integration", () => {
   const sql = createD1SqlTag(env.DB);
 
   beforeAll(async () => {
-    await env.DB.prepare(`
+    await env.DB.prepare(
+      `
       CREATE TABLE IF NOT EXISTS test_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT,
         active INTEGER DEFAULT 1
       )
-    `).run();
+    `,
+    ).run();
   });
 
   afterEach(async () => {
@@ -96,9 +98,10 @@ describe("D1 Integration", () => {
       await sql`INSERT INTO test_users (name) VALUES (${"Bob"})`.run();
 
       // The same value "Alice" should be deduplicated in the query
-      const result = await sql`SELECT * FROM test_users WHERE name = ${"Alice"} OR name = ${"Alice"}`.all<{
-        name: string;
-      }>();
+      const result =
+        await sql`SELECT * FROM test_users WHERE name = ${"Alice"} OR name = ${"Alice"}`.all<{
+          name: string;
+        }>();
 
       expect(result.results).toHaveLength(1);
       expect(result.results[0].name).toBe("Alice");
@@ -233,6 +236,44 @@ describe("D1 Integration", () => {
 
       expect(statement.query).toBe("SELECT * FROM test_users WHERE id = ?1");
       expect(statement.values).toEqual([123]);
+    });
+  });
+
+  describe("join()", () => {
+    it("selects rows matching array of IDs", async () => {
+      const r1 = await sql`INSERT INTO test_users (name) VALUES (${"Alice"})`.run();
+      await sql`INSERT INTO test_users (name) VALUES (${"Bob"})`.run();
+      const r3 = await sql`INSERT INTO test_users (name) VALUES (${"Charlie"})`.run();
+
+      const result = await sql`SELECT * FROM test_users WHERE id IN (${sql.join([
+        r1.meta.last_row_id,
+        r3.meta.last_row_id,
+      ])})`.all<{ name: string }>();
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results.map((r) => r.name).sort()).toEqual(["Alice", "Charlie"]);
+    });
+
+    it("handles empty array by returning no results", async () => {
+      await sql`INSERT INTO test_users (name) VALUES (${"Alice"})`.run();
+
+      const result = await sql`SELECT * FROM test_users WHERE id IN (${sql.join([])})`.all();
+
+      expect(result.results).toHaveLength(0);
+    });
+
+    it("works with string arrays", async () => {
+      await sql`INSERT INTO test_users (name) VALUES (${"Alice"})`.run();
+      await sql`INSERT INTO test_users (name) VALUES (${"Bob"})`.run();
+      await sql`INSERT INTO test_users (name) VALUES (${"Charlie"})`.run();
+
+      const result = await sql`SELECT * FROM test_users WHERE name IN (${sql.join([
+        "Alice",
+        "Bob",
+      ])})`.all<{ name: string }>();
+
+      expect(result.results).toHaveLength(2);
+      expect(result.results.map((r) => r.name).sort()).toEqual(["Alice", "Bob"]);
     });
   });
 });

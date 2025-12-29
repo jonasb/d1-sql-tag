@@ -98,9 +98,7 @@ describe("createMockSqlTag", () => {
     return {
       all: vi.fn(impl?.all ?? (async () => defaultResult as D1Result<any>)),
       run: vi.fn(impl?.run ?? (async () => defaultResult as D1Response)),
-      batch: vi.fn(
-        impl?.batch ?? (async (stmts: any[]) => stmts.map(() => defaultResult)),
-      ),
+      batch: vi.fn(impl?.batch ?? (async (stmts: any[]) => stmts.map(() => defaultResult))),
     };
   }
 
@@ -119,9 +117,7 @@ describe("createMockSqlTag", () => {
     await sql`INSERT INTO users (name) VALUES (${"Alice"})`.run();
 
     expect(sql.handler.run).toHaveBeenCalledTimes(1);
-    expect(sql.handler.run).toHaveBeenCalledWith("INSERT INTO users (name) VALUES (?1)", [
-      "Alice",
-    ]);
+    expect(sql.handler.run).toHaveBeenCalledWith("INSERT INTO users (name) VALUES (?1)", ["Alice"]);
   });
 
   it("handles fragments in mock sql tag", async () => {
@@ -199,5 +195,52 @@ describe("createMockSqlTag", () => {
 
     expect(result1.results).toEqual([{ id: 1, name: "ALICE" }]);
     expect(result2.results).toEqual([{ id: 2, name: "BOB" }]);
+  });
+});
+
+describe("sql.join()", () => {
+  it("expands array into comma-separated placeholders", () => {
+    const sql = mockTag();
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE id IN (${sql.join([1, 2, 3])})`,
+      "SELECT * FROM users WHERE id IN (?1, ?2, ?3)",
+      [1, 2, 3],
+    );
+  });
+
+  it("handles single-element arrays", () => {
+    const sql = mockTag();
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE id IN (${sql.join([42])})`,
+      "SELECT * FROM users WHERE id IN (?1)",
+      [42],
+    );
+  });
+
+  it("handles empty arrays with NULL", () => {
+    const sql = mockTag();
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE id IN (${sql.join([])})`,
+      "SELECT * FROM users WHERE id IN (NULL)",
+      [],
+    );
+  });
+
+  it("deduplicates values across join and regular params", () => {
+    const sql = mockTag();
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE id IN (${sql.join([1, 2])}) AND name = ${"Alice"} AND code = ${1}`,
+      "SELECT * FROM users WHERE id IN (?1, ?2) AND name = ?3 AND code = ?1",
+      [1, 2, "Alice"],
+    );
+  });
+
+  it("works with string arrays", () => {
+    const sql = mockTag();
+    expectQueryEquals(
+      sql`SELECT * FROM users WHERE name IN (${sql.join(["Alice", "Bob"])})`,
+      "SELECT * FROM users WHERE name IN (?1, ?2)",
+      ["Alice", "Bob"],
+    );
   });
 });

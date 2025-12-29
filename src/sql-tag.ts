@@ -7,15 +7,21 @@ import type {
 
 export type Primitive = string | number | boolean | null;
 
+interface JoinFragment {
+  templateStrings: TemplateStringsArray;
+  templateValues: Primitive[];
+}
+
 export type SqlTag = ((
   strings: TemplateStringsArray,
-  ...values: (Primitive | SqlQueryFragment)[]
+  ...values: (Primitive | SqlQueryFragment | JoinFragment)[]
 ) => SqlQueryFragment) & {
   batch<T extends readonly PreparedStatementBase<object>[]>(
     statements: T,
   ): Promise<{
     -readonly [P in keyof T]: SqlResult<RowType<T[P]>>;
   }>;
+  join(values: Primitive[]): JoinFragment;
 };
 
 export interface SqlQueryFragment {
@@ -23,8 +29,10 @@ export interface SqlQueryFragment {
   all<T extends object = Record<string, Primitive>>(): Promise<D1Result<T>>;
   run(): Promise<D1Response>;
   templateStrings: TemplateStringsArray;
-  templateValues: (Primitive | SqlQueryFragment)[];
+  templateValues: TemplateValue[];
 }
+
+type TemplateValue = Primitive | SqlQueryFragment | JoinFragment;
 
 interface PreparedStatementBase<T extends object> {
   query: string;
@@ -34,8 +42,10 @@ interface PreparedStatementBase<T extends object> {
   [rowTypeSymbol]: T;
 }
 
-interface MappedPreparedStatement<TRaw extends object, TMapped extends object>
-  extends PreparedStatementBase<TMapped> {
+interface MappedPreparedStatement<
+  TRaw extends object,
+  TMapped extends object,
+> extends PreparedStatementBase<TMapped> {
   mapper: (row: TRaw) => TMapped;
 }
 
@@ -66,9 +76,7 @@ interface SqlTagOptions {
 export interface MockSqlTagHandler {
   all<T extends object>(query: string, values: Primitive[]): Promise<D1Result<T>>;
   run(query: string, values: Primitive[]): Promise<D1Response>;
-  batch(
-    statements: Array<{ query: string; values: Primitive[] }>,
-  ): Promise<D1Result<object>[]>;
+  batch(statements: Array<{ query: string; values: Primitive[] }>): Promise<D1Result<object>[]>;
 }
 
 export type MockSqlTag<T extends MockSqlTagHandler> = SqlTag & { handler: T };
@@ -116,6 +124,7 @@ export function createD1SqlTag(
 
     return result;
   };
+  sqlTag.join = join;
   return sqlTag;
 }
 
@@ -150,6 +159,7 @@ export function createMockSqlTag<T extends MockSqlTagHandler>(handler: T): MockS
 
     return result;
   };
+  sqlTag.join = join;
   sqlTag.handler = handler;
   return sqlTag;
 }
@@ -157,7 +167,7 @@ export function createMockSqlTag<T extends MockSqlTagHandler>(handler: T): MockS
 function buildMockPreparedStatement<T extends object>(
   handler: MockSqlTagHandler,
   templateStrings: TemplateStringsArray,
-  templateValues: (Primitive | SqlQueryFragment)[],
+  templateValues: TemplateValue[],
 ): RawPreparedStatement<T> {
   const { query, values } = expandTemplate(templateStrings, templateValues);
 
@@ -198,7 +208,7 @@ function buildPreparedStatement<T extends object>(
   db: D1Database | D1DatabaseSession,
   options: SqlTagOptions | undefined,
   templateStrings: TemplateStringsArray,
-  templateValues: (Primitive | SqlQueryFragment)[],
+  templateValues: TemplateValue[],
 ): RawPreparedStatement<T> {
   const { query, values } = expandTemplate(templateStrings, templateValues);
 
@@ -234,15 +244,12 @@ function buildPreparedStatement<T extends object>(
 
 function expandTemplate(
   rootTemplateStrings: TemplateStringsArray,
-  rootTemplateValues: (Primitive | SqlQueryFragment)[],
+  rootTemplateValues: TemplateValue[],
 ) {
   let query = "";
   const values: Primitive[] = [];
 
-  function expand(
-    templateStrings: TemplateStringsArray,
-    templateValues: (Primitive | SqlQueryFragment)[],
-  ) {
+  function expand(templateStrings: TemplateStringsArray, templateValues: TemplateValue[]) {
     for (let i = 0; i < templateStrings.length; i++) {
       if (i > 0) {
         const value = templateValues[i - 1];
@@ -321,4 +328,31 @@ function makeNativeStatement<T extends object>(
 function makeBatchId() {
   batchId += 1;
   return batchId;
+}
+
+function makeTemplateStrings(strings: string[]): TemplateStringsArray {
+  const templateStrings = strings as unknown as TemplateStringsArray;
+  Object.defineProperty(templateStrings, "raw", { value: strings });
+  return templateStrings;
+}
+
+function join(values: Primitive[]): JoinFragment {
+  if (values.length === 0) {
+    return {
+      templateStrings: makeTemplateStrings(["NULL"]),
+      templateValues: [],
+    };
+  }
+
+  // Create templateStrings: ["", ", ", ", ", ""] with length = values.length + 1
+  const strings = [""];
+  for (let i = 1; i < values.length; i++) {
+    strings.push(", ");
+  }
+  strings.push("");
+
+  return {
+    templateStrings: makeTemplateStrings(strings),
+    templateValues: values,
+  };
 }
