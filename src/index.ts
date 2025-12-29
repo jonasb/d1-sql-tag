@@ -1,5 +1,8 @@
 export {
   createD1SqlTag,
+  createMockSqlTag,
+  type MockSqlTag,
+  type MockSqlTagHandler,
   type Primitive,
   type SqlTag,
   type SqlQueryFragment,

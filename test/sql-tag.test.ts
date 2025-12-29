@@ -1,7 +1,13 @@
-import type { D1Database } from "@cloudflare/workers-types";
+import type { D1Database, D1Response, D1Result } from "@cloudflare/workers-types";
 import assert from "node:assert";
-import { describe, it } from "node:test";
-import { createD1SqlTag, type Primitive, type SqlQueryFragment } from "../src/sql-tag.js";
+import { describe, it, mock } from "node:test";
+import {
+  createD1SqlTag,
+  createMockSqlTag,
+  type MockSqlTagHandler,
+  type Primitive,
+  type SqlQueryFragment,
+} from "../src/sql-tag.js";
 
 function mockTag() {
   return createD1SqlTag({ dummy: true } as unknown as D1Database);
@@ -83,5 +89,123 @@ describe("sql", () => {
       "SELECT * FROM users WHERE column = ?1 AND foo = ?2",
       [123, "bar"],
     );
+  });
+});
+
+describe("createMockSqlTag", () => {
+  const defaultResult = { results: [], success: true, meta: { duration: 0 } };
+
+  function createMockHandler(impl?: Partial<MockSqlTagHandler>) {
+    return {
+      all: mock.fn(impl?.all ?? (async () => defaultResult as D1Result<any>)),
+      run: mock.fn(impl?.run ?? (async () => defaultResult as D1Response)),
+      batch: mock.fn(
+        impl?.batch ?? (async (stmts: any[]) => stmts.map(() => defaultResult)),
+      ),
+    };
+  }
+
+  it("builds query correctly and calls handler.all", async () => {
+    const sql = createMockSqlTag(createMockHandler());
+
+    await sql`SELECT * FROM users WHERE id = ${1}`.all();
+
+    assert.equal(sql.handler.all.mock.callCount(), 1);
+    assert.deepEqual(sql.handler.all.mock.calls[0].arguments, [
+      "SELECT * FROM users WHERE id = ?1",
+      [1],
+    ]);
+  });
+
+  it("builds query correctly and calls handler.run", async () => {
+    const sql = createMockSqlTag(createMockHandler());
+
+    await sql`INSERT INTO users (name) VALUES (${"Alice"})`.run();
+
+    assert.equal(sql.handler.run.mock.callCount(), 1);
+    assert.deepEqual(sql.handler.run.mock.calls[0].arguments, [
+      "INSERT INTO users (name) VALUES (?1)",
+      ["Alice"],
+    ]);
+  });
+
+  it("handles fragments in mock sql tag", async () => {
+    const sql = createMockSqlTag(createMockHandler());
+
+    const whereClause = sql`id = ${42}`;
+    await sql`SELECT * FROM users WHERE ${whereClause}`.all();
+
+    assert.deepEqual(sql.handler.all.mock.calls[0].arguments, [
+      "SELECT * FROM users WHERE id = ?1",
+      [42],
+    ]);
+  });
+
+  it("supports .build() to get query without executing", () => {
+    const sql = createMockSqlTag(createMockHandler());
+
+    const statement = sql`SELECT * FROM users WHERE id = ${1}`.build();
+
+    assert.equal(statement.query, "SELECT * FROM users WHERE id = ?1");
+    assert.deepEqual(statement.values, [1]);
+    assert.equal(sql.handler.all.mock.callCount(), 0);
+    assert.equal(sql.handler.run.mock.callCount(), 0);
+  });
+
+  it("supports .map() for result transformation", async () => {
+    const sql = createMockSqlTag(
+      createMockHandler({
+        all: async () => ({
+          results: [{ id: 1, name: "alice" }],
+          success: true,
+          meta: { duration: 0 },
+        }),
+      }),
+    );
+
+    const result = await sql`SELECT * FROM users`
+      .build<{ id: number; name: string }>()
+      .map((row) => ({ ...row, name: row.name.toUpperCase() }))
+      .all();
+
+    assert.deepEqual(result.results, [{ id: 1, name: "ALICE" }]);
+  });
+
+  it("supports batch execution", async () => {
+    const sql = createMockSqlTag(createMockHandler());
+
+    await sql.batch([
+      sql`INSERT INTO users (name) VALUES (${"Alice"})`.build(),
+      sql`INSERT INTO users (name) VALUES (${"Bob"})`.build(),
+    ]);
+
+    assert.equal(sql.handler.batch.mock.callCount(), 1);
+    assert.deepEqual(sql.handler.batch.mock.calls[0].arguments[0], [
+      { query: "INSERT INTO users (name) VALUES (?1)", values: ["Alice"] },
+      { query: "INSERT INTO users (name) VALUES (?1)", values: ["Bob"] },
+    ]);
+  });
+
+  it("applies mappers in batch execution", async () => {
+    const sql = createMockSqlTag(
+      createMockHandler({
+        batch: async () => [
+          { results: [{ id: 1, name: "alice" }], success: true, meta: { duration: 0 } },
+          { results: [{ id: 2, name: "bob" }], success: true, meta: { duration: 0 } },
+        ],
+      }),
+    );
+
+    const [result1, result2] = await sql.batch([
+      sql`SELECT * FROM users WHERE id = ${1}`
+        .build<{ id: number; name: string }>()
+        .map((row) => ({ ...row, name: row.name.toUpperCase() })),
+      sql`SELECT * FROM users WHERE id = ${2}`
+        .build<{ id: number; name: string }>()
+        .map((row) => ({ ...row, name: row.name.toUpperCase() })),
+    ]);
+
+    assert.deepEqual(result1.results, [{ id: 1, name: "ALICE" }]);
+    assert.deepEqual(result2.results, [{ id: 2, name: "BOB" }]);
   });
 });

@@ -63,6 +63,16 @@ interface SqlTagOptions {
   afterQuery?: (id: number, queries: string[], results: SqlResult[], duration: number) => void;
 }
 
+export interface MockSqlTagHandler {
+  all<T extends object>(query: string, values: Primitive[]): Promise<D1Result<T>>;
+  run(query: string, values: Primitive[]): Promise<D1Response>;
+  batch(
+    statements: Array<{ query: string; values: Primitive[] }>,
+  ): Promise<D1Result<object>[]>;
+}
+
+export type MockSqlTag<T extends MockSqlTagHandler> = SqlTag & { handler: T };
+
 let batchId = 0;
 const rowTypeSymbol = Symbol("rowType");
 
@@ -107,6 +117,81 @@ export function createD1SqlTag(
     return result;
   };
   return sqlTag;
+}
+
+export function createMockSqlTag<T extends MockSqlTagHandler>(handler: T): MockSqlTag<T> {
+  const sqlTag = ((strings, ...values): SqlQueryFragment => {
+    const fragment: SqlQueryFragment = {
+      build() {
+        return buildMockPreparedStatement(handler, strings, values);
+      },
+      all<T extends object>() {
+        return buildMockPreparedStatement<T>(handler, strings, values).all();
+      },
+      run() {
+        return buildMockPreparedStatement(handler, strings, values).run();
+      },
+      templateStrings: strings,
+      templateValues: values,
+    };
+    return fragment;
+  }) as MockSqlTag<T>;
+  sqlTag.batch = async (statements) => {
+    const statementsData = statements.map((it) => ({ query: it.query, values: it.values }));
+    const result = (await handler.batch(statementsData)) as any;
+
+    for (let i = 0; i < result.length; i++) {
+      const statement = statements[i];
+      const statementResult = result[i];
+      if ("mapper" in statement) {
+        statementResult.results = statementResult.results.map(statement.mapper);
+      }
+    }
+
+    return result;
+  };
+  sqlTag.handler = handler;
+  return sqlTag;
+}
+
+function buildMockPreparedStatement<T extends object>(
+  handler: MockSqlTagHandler,
+  templateStrings: TemplateStringsArray,
+  templateValues: (Primitive | SqlQueryFragment)[],
+): RawPreparedStatement<T> {
+  const { query, values } = expandTemplate(templateStrings, templateValues);
+
+  const statement: RawPreparedStatement<T> = {
+    async all() {
+      const result = (await handler.all(query, values)) as SqlResult<T>;
+      return result;
+    },
+    run() {
+      return handler.run(query, values);
+    },
+    map<U extends object>(mapper: (row: T) => U) {
+      const mappedStatement: MappedPreparedStatement<T, U> = {
+        async all() {
+          const result = (await handler.all(query, values)) as SqlResult<T>;
+          result.results = result.results.map(mapper as any);
+          return result as unknown as D1Result<U>;
+        },
+        run() {
+          return handler.run(query, values);
+        },
+        query,
+        values,
+        mapper,
+        [rowTypeSymbol]: null as any,
+      };
+      return mappedStatement;
+    },
+    query,
+    values,
+    [rowTypeSymbol]: null as any,
+  };
+
+  return statement;
 }
 
 function buildPreparedStatement<T extends object>(

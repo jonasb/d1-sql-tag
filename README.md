@@ -105,6 +105,61 @@ app.get("/", async (c) => {
 export default app;
 ```
 
+## Testing with Mock SQL Tag
+
+For testing, you can use `createMockSqlTag` to create a sql tag that properly builds
+queries but delegates execution to your mock implementation. This allows you to:
+
+- Verify that correct SQL queries are generated
+- Mock responses for different queries
+- Test without a real D1 database
+
+The function is generic and preserves your mock types via `sql.handler`, so you can
+use vitest/jest mock methods without type casting.
+
+### Example with Vitest
+
+```ts
+import { createMockSqlTag } from "d1-sql-tag";
+import { vi, expect, test } from "vitest";
+
+test("queries user by id", async () => {
+  const sql = createMockSqlTag({
+    all: vi.fn().mockResolvedValue({ results: [], success: true, meta: {} }),
+    run: vi.fn().mockResolvedValue({ success: true, meta: {} }),
+    batch: vi.fn().mockResolvedValue([]),
+  });
+
+  // Mock specific response - no type casting needed!
+  sql.handler.all.mockResolvedValueOnce({
+    results: [{ id: 1, name: "Alice" }],
+    success: true,
+    meta: {},
+  });
+
+  const result = await sql`SELECT * FROM users WHERE id = ${1}`.all<{
+    id: number;
+    name: string;
+  }>();
+
+  // Verify the query was built correctly
+  expect(sql.handler.all).toHaveBeenCalledWith("SELECT * FROM users WHERE id = ?1", [1]);
+
+  // Verify the response
+  expect(result.results[0].name).toBe("Alice");
+});
+```
+
+### MockSqlTagHandler Interface
+
+```ts
+interface MockSqlTagHandler {
+  all<T extends object>(query: string, values: Primitive[]): Promise<D1Result<T>>;
+  run(query: string, values: Primitive[]): Promise<D1Response>;
+  batch(statements: Array<{ query: string; values: Primitive[] }>): Promise<D1Result<object>[]>;
+}
+```
+
 ## License
 
 [MIT](./LICENSE.txt)
