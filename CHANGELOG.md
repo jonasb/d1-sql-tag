@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.6.2
+
+### Patch Changes
+
+- 65909cb: Switch from .mjs to .js in built files
+
 ## 0.6.1
 
 ### Patch Changes
