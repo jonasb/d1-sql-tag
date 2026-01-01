@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.6.3
+
+### Patch Changes
+
+- d94fda8: Fix exports in package.json since we renamed .mjs->.js
+
 ## 0.6.2
 
 ### Patch Changes
