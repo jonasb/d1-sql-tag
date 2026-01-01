@@ -1,6 +1,6 @@
 {
   "name": "d1-sql-tag",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "A template literal for working with Cloudflare D1 database",
   "keywords": [
     "d1",
