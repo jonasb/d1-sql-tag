@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.6.4
+
+### Patch Changes
+
+- c3ea1d1: Add main and types fields for better tsconfig compatibility. Provides fallback entry points for TypeScript configurations that don't fully support the exports field.
+
 ## 0.6.3
 
 ### Patch Changes
