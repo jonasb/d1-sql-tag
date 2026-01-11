@@ -1,5 +1,11 @@
 # d1-sql-tag
 
+## 0.6.5
+
+### Patch Changes
+
+- 6a387c2: Improve batch() TypeScript inference to preserve tuple length, ensuring the number of results matches the number of input statements
+
 ## 0.6.4
 
 ### Patch Changes
