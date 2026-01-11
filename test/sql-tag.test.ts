@@ -92,12 +92,24 @@ describe("sql", () => {
 });
 
 describe("createMockSqlTag", () => {
-  const defaultResult = { results: [], success: true, meta: { duration: 0 } };
+  const defaultResult: D1Result<any> = {
+    results: [],
+    success: true,
+    meta: {
+      duration: 0,
+      size_after: 0,
+      rows_read: 0,
+      rows_written: 0,
+      last_row_id: 0,
+      changed_db: false,
+      changes: 0,
+    },
+  };
 
-  function createMockHandler(impl?: Partial<MockSqlTagHandler>) {
+  function createMockHandler(impl?: Partial<MockSqlTagHandler>): MockSqlTagHandler {
     return {
-      all: vi.fn(impl?.all ?? (async () => defaultResult as D1Result<any>)),
-      run: vi.fn(impl?.run ?? (async () => defaultResult as D1Response)),
+      all: vi.fn(impl?.all ?? (async () => defaultResult)) as MockSqlTagHandler["all"],
+      run: vi.fn(impl?.run ?? (async () => defaultResult)),
       batch: vi.fn(impl?.batch ?? (async (stmts: any[]) => stmts.map(() => defaultResult))),
     };
   }
@@ -143,11 +155,19 @@ describe("createMockSqlTag", () => {
   it("supports .map() for result transformation", async () => {
     const sql = createMockSqlTag(
       createMockHandler({
-        all: async () => ({
+        all: (async () => ({
           results: [{ id: 1, name: "alice" }],
           success: true,
-          meta: { duration: 0 },
-        }),
+          meta: {
+            duration: 0,
+            size_after: 0,
+            rows_read: 1,
+            rows_written: 0,
+            last_row_id: 0,
+            changed_db: false,
+            changes: 0,
+          },
+        })) as MockSqlTagHandler["all"],
       }),
     );
 
@@ -178,8 +198,32 @@ describe("createMockSqlTag", () => {
     const sql = createMockSqlTag(
       createMockHandler({
         batch: async () => [
-          { results: [{ id: 1, name: "alice" }], success: true, meta: { duration: 0 } },
-          { results: [{ id: 2, name: "bob" }], success: true, meta: { duration: 0 } },
+          {
+            results: [{ id: 1, name: "alice" }],
+            success: true,
+            meta: {
+              duration: 0,
+              size_after: 0,
+              rows_read: 1,
+              rows_written: 0,
+              last_row_id: 0,
+              changed_db: false,
+              changes: 0,
+            },
+          },
+          {
+            results: [{ id: 2, name: "bob" }],
+            success: true,
+            meta: {
+              duration: 0,
+              size_after: 0,
+              rows_read: 1,
+              rows_written: 0,
+              last_row_id: 0,
+              changed_db: false,
+              changes: 0,
+            },
+          },
         ],
       }),
     );
