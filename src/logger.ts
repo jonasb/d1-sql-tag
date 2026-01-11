@@ -7,6 +7,7 @@ export function logQueryResults(queries: string[], results: SqlResult[], duratio
   for (let i = 0; i < queries.length; i++) {
     const query = queries[i];
     const result = results[i];
+    if (!query || !result) continue;
 
     console.log(`${i + 1}: ${cleanupSqlQuery(query)}`);
 

@@ -16,7 +16,7 @@ export type SqlTag = ((
   strings: TemplateStringsArray,
   ...values: (Primitive | SqlQueryFragment | JoinFragment)[]
 ) => SqlQueryFragment) & {
-  batch<T extends readonly PreparedStatementBase<object>[]>(
+  batch<T extends readonly PreparedStatementBase<object>[] | []>(
     statements: T,
   ): Promise<{
     -readonly [P in keyof T]: SqlResult<RowType<T[P]>>;
@@ -117,7 +117,7 @@ export function createD1SqlTag(
     for (let i = 0; i < result.length; i++) {
       const statement = statements[i];
       const statementResult = result[i];
-      if ("mapper" in statement) {
+      if (statement && "mapper" in statement) {
         statementResult.results = statementResult.results.map(statement.mapper);
       }
     }
@@ -152,7 +152,7 @@ export function createMockSqlTag<T extends MockSqlTagHandler>(handler: T): MockS
     for (let i = 0; i < result.length; i++) {
       const statement = statements[i];
       const statementResult = result[i];
-      if ("mapper" in statement) {
+      if (statement && "mapper" in statement) {
         statementResult.results = statementResult.results.map(statement.mapper);
       }
     }
@@ -252,7 +252,7 @@ function expandTemplate(
   function expand(templateStrings: TemplateStringsArray, templateValues: TemplateValue[]) {
     for (let i = 0; i < templateStrings.length; i++) {
       if (i > 0) {
-        const value = templateValues[i - 1];
+        const value = templateValues[i - 1] ?? null;
         const valueIsFragment =
           value &&
           typeof value === "object" &&

@@ -182,10 +182,13 @@ describe("createMockSqlTag", () => {
   it("supports batch execution", async () => {
     const sql = createMockSqlTag(createMockHandler());
 
-    await sql.batch([
+    const [result1, result2] = await sql.batch([
       sql`INSERT INTO users (name) VALUES (${"Alice"})`.build(),
       sql`INSERT INTO users (name) VALUES (${"Bob"})`.build(),
     ]);
+
+    expect(result1).toEqual(defaultResult);
+    expect(result2).toEqual(defaultResult);
 
     expect(sql.handler.batch).toHaveBeenCalledTimes(1);
     expect(sql.handler.batch).toHaveBeenCalledWith([
