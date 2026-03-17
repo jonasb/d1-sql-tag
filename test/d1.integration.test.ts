@@ -34,7 +34,7 @@ describe("D1 Integration", () => {
       }>();
 
       expect(result.results).toHaveLength(1);
-      expect(result.results[0]).toMatchObject({
+      expect(result.results[0]!).toMatchObject({
         name: "Alice",
         email: "alice@example.com",
         active: 1,
@@ -47,7 +47,7 @@ describe("D1 Integration", () => {
 
       const result = await sql`SELECT name FROM test_users`.all<{ name: string }>();
 
-      expect(result.results[0].name).toBe("Robert");
+      expect(result.results[0]!.name).toBe("Robert");
     });
 
     it("deletes a row", async () => {
@@ -68,7 +68,7 @@ describe("D1 Integration", () => {
         name: string;
       }>();
 
-      expect(result.results[0].name).toBe("Test");
+      expect(result.results[0]!.name).toBe("Test");
     });
 
     it("binds number values", async () => {
@@ -78,7 +78,7 @@ describe("D1 Integration", () => {
         name: string;
       }>();
 
-      expect(result.results[0].name).toBe("Inactive");
+      expect(result.results[0]!.name).toBe("Inactive");
     });
 
     it("binds null values", async () => {
@@ -88,7 +88,7 @@ describe("D1 Integration", () => {
         name: string;
       }>();
 
-      expect(result.results[0].name).toBe("NoEmail");
+      expect(result.results[0]!.name).toBe("NoEmail");
     });
   });
 
@@ -104,7 +104,7 @@ describe("D1 Integration", () => {
         }>();
 
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].name).toBe("Alice");
+      expect(result.results[0]!.name).toBe("Alice");
     });
   });
 
@@ -119,7 +119,7 @@ describe("D1 Integration", () => {
       }>();
 
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].name).toBe("Alice");
+      expect(result.results[0]!.name).toBe("Alice");
     });
 
     it("uses nested fragments", async () => {
@@ -135,7 +135,7 @@ describe("D1 Integration", () => {
       }>();
 
       expect(result.results).toHaveLength(1);
-      expect(result.results[0].name).toBe("Alice");
+      expect(result.results[0]!.name).toBe("Alice");
     });
 
     it("reuses fragments with values", async () => {
@@ -159,7 +159,7 @@ describe("D1 Integration", () => {
         .map((row) => ({ ...row, name: row.name.toUpperCase() }))
         .all();
 
-      expect(result.results[0].name).toBe("ALICE");
+      expect(result.results[0]!.name).toBe("ALICE");
     });
 
     it("transforms results with complex mapping", async () => {
@@ -174,7 +174,7 @@ describe("D1 Integration", () => {
         }))
         .all();
 
-      expect(result.results[0]).toEqual({
+      expect(result.results[0]!).toEqual({
         displayName: "Test",
         isActive: true,
         contact: "test@example.com",
@@ -194,7 +194,7 @@ describe("D1 Integration", () => {
         count: number;
       }>();
 
-      expect(result.results[0].count).toBe(3);
+      expect(result.results[0]!.count).toBe(3);
     });
 
     it("returns results from batch queries", async () => {
@@ -208,8 +208,8 @@ describe("D1 Integration", () => {
         sql`SELECT * FROM test_users WHERE name = ${"Bob"}`.build<{ name: string }>(),
       ]);
 
-      expect(result1.results[0].name).toBe("Alice");
-      expect(result2.results[0].name).toBe("Bob");
+      expect(result1.results[0]!.name).toBe("Alice");
+      expect(result2.results[0]!.name).toBe("Bob");
     });
 
     it("applies mappers in batch execution", async () => {
@@ -225,8 +225,8 @@ describe("D1 Integration", () => {
           .map((row) => ({ ...row, name: row.name.toUpperCase() })),
       ]);
 
-      expect(result1.results[0].name).toBe("ALICE");
-      expect(result2.results[0].name).toBe("BOB");
+      expect(result1.results[0]!.name).toBe("ALICE");
+      expect(result2.results[0]!.name).toBe("BOB");
     });
   });
 

@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "tsdown src/index.ts --format esm --sourcemap --dts",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "changeset": "changeset",
     "prettier:check": "prettier --check .",
     "prettier:fix": "prettier --write .",
