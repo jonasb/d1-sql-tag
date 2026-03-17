@@ -1,7 +1,5 @@
-import type { D1Database } from "@cloudflare/workers-types";
-
-declare module "cloudflare:test" {
-  interface ProvidedEnv {
+declare namespace Cloudflare {
+  interface Env {
     DB: D1Database;
   }
 }
